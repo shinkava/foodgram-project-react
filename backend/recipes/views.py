@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, status, viewsets, exceptions
 from rest_framework.decorators import action
 from rest_framework.permissions import (
     IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -32,23 +32,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
-        if request.method == 'GET':
-            favorite_recipe, created = FavoriteRecipe.objects.get_or_create(
-                user=user, recipe=recipe
-            )
-            if created is True:
-                serializer = FavoritedSerializer()
-                return Response(
-                    serializer.to_representation(instance=favorite_recipe),
-                    status=status.HTTP_201_CREATED
-                )
-        if request.method == 'DELETE':
-            FavoriteRecipe.objects.filter(
+        if self.request.method == 'POST':
+            if FavoriteRecipe.objects.filter(
                 user=user,
                 recipe=recipe
-            ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+            ).exists():
+                raise exceptions.ValidationError('Рецепт уже в избранном.')
+
+            FavoriteRecipe.objects.create(user=user, recipe=recipe)
+            serializer = FavoritedSerializer(
+                recipe,
+                context={'request': request}
+            )
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @action(
         detail=True,
@@ -72,13 +70,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 {'errors': 'Рецепт уже в корзине покупок'},
                 status=status.HTTP_201_CREATED
             )
-        if request.method == 'DELETE':
-            ShoppingCart.objects.filter(
-                user=user, recipe=recipe
-            ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
-
 
     @action(
         detail=False,
