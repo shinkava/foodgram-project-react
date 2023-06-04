@@ -6,7 +6,7 @@ from rest_framework import serializers
 from users.models import CustomUser
 
 from .models import (FavoriteRecipe, Ingredient, IngredientsRecipe, Recipe,
-                     ShoppingCart, Tag, TagsRecipe)
+                     ShoppingCart, Tag)
 
 
 class AuthorSerializer(serializers.ModelSerializer):

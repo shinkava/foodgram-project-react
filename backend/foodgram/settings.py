@@ -23,11 +23,10 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
+    'users',
     'djoser',
     'debug_toolbar',
     'recipes',
-    'users',
-    'about',
 ]
 
 
