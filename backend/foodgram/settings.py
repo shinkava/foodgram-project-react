@@ -13,6 +13,8 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
+AUTH_USER_MODEL = 'users.CustomUser'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -23,14 +25,11 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
-    'users',
     'djoser',
     'debug_toolbar',
     'recipes',
+    'users',
 ]
-
-
-AUTH_USER_MODEL = 'users.CustomUser'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
