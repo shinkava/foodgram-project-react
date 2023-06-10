@@ -1,5 +1,5 @@
 from djoser.views import UserViewSet
-from rest_framework import status
+from rest_framework import status, exceptions
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -34,13 +34,13 @@ class CustomUserViewSet(UserViewSet):
     def subscribe(self, request, id):
         followed = get_object_or_404(CustomUser, id=id)
         follower = request.user
-
-        if request.method == 'GET':
-            subscribed = (Follow.objects.filter(
-                author=followed, user=follower).exists()
-            )
-            if subscribed is True:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+        if self.request.method == 'POST':
+            if Follow.objects.filter(
+                author=followed,
+                user=follower
+            ).exists():
+                content = {'errors': 'Вы уже подписаны на данного автора'}
+                return Response(content, status=status.HTTP_400_BAD_REQUEST)
             Follow.objects.get_or_create(
                 user=follower,
                 author=followed
@@ -48,16 +48,8 @@ class CustomUserViewSet(UserViewSet):
             serializer = UserSubscribeSerializer(
                 context=self.get_serializer_context()
             )
-            return Response(serializer.to_representation(
-                instance=followed),
-                status=status.HTTP_201_CREATED
-            )
-        if request.method == 'DELETE':
-            Follow.objects.filter(
-                user=follower, author=followed
-            ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @action(
         detail=True,

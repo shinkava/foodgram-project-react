@@ -3,6 +3,7 @@ import traceback
 from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
+
 from users.models import CustomUser
 
 from .models import (FavoriteRecipe, Ingredient, IngredientsRecipe, Recipe,
@@ -109,17 +110,15 @@ class RecipeSerializer(serializers.ModelSerializer):
         recipe = Recipe.objects.create(author=author, **validated_data)
         recipe.tags.set(tags)
 
+        ingredient_list = []
+
         for ingredient in ingredients:
-            amount = ingredient['amount']
-            ingredient = Ingredient.objects.bulk_create(pk=ingredient['id'])
-
-            IngredientsRecipe.objects.create(
+            IngredientsRecipe.ingredient_list.append(
                 recipe=recipe,
-                ingredient=ingredient,
-                amount=amount
+                ingredient=ingredient['id'],
+                amount=ingredient['amount']
             )
-
-        return recipe
+        IngredientsRecipe.objects.bulk_create(ingredient_list)
 
     def update(self, instance, validated_data):
         tags = validated_data.pop('tags', None)
@@ -171,9 +170,6 @@ class FavoritedSerializer(serializers.ModelSerializer):
         if (FavoriteRecipe.objects.filter(recipe=recipe, user=user).exists()):
             raise serializers.ValidationError('You have already subscribed!')
         return data
-
-    def create(self, validated_data):
-        return FavoriteRecipe.objects.create(**validated_data)
 
     class Meta:
         model = FavoriteRecipe

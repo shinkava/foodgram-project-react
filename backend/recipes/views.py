@@ -29,24 +29,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticatedOrReadOnly],
         url_path='favorite'
     )
+    def _favorite_shopping_post_delete(self, related_manager):
+        recipe = self.get_object()
+        if self.request.method == 'DELETE':
+            related_manager.get(recipe_id=recipe.id).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        if related_manager.filter(recipe=recipe).exists():
+            raise exceptions.ValidationError('Рецепт уже в избранном')
+        related_manager.create(recipe=recipe)
+        serializer = RecipeSerializer(instance=recipe)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     def favorite(self, request, pk):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        user = request.user
-        if self.request.method == 'POST':
-            if FavoriteRecipe.objects.filter(
-                user=user,
-                recipe=recipe
-            ).exists():
-                raise exceptions.ValidationError('Рецепт уже в избранном.')
-
-            FavoriteRecipe.objects.create(user=user, recipe=recipe)
-            serializer = FavoritedSerializer(
-                recipe,
-                context={'request': request}
-            )
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return self._favorite_shopping_post_delete(
+            request.user.favorite
+        )
 
     @action(
         detail=True,
@@ -54,23 +51,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticatedOrReadOnly]
     )
     def shopping_cart(self, request, pk):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        user = request.user
-        if request.method == 'GET':
-            recipe, created = ShoppingCart.objects.get_or_create(
-                user=user, recipe=recipe
-            )
-            if created is True:
-                serializer = ShoppingCartSerializer()
-                return Response(
-                    serializer.to_representation(instance=recipe),
-                    status=status.HTTP_201_CREATED
-                )
-            return Response(
-                {'errors': 'Рецепт уже в корзине покупок'},
-                status=status.HTTP_201_CREATED
-            )
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return self._favorite_shopping_post_delete(
+            request.user.favorite
+        )
 
     @action(
         detail=False,

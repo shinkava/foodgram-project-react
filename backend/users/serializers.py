@@ -60,9 +60,6 @@ class UserSubscribeSerializer(serializers.ModelSerializer, IsSubscribedMixin):
             raise serializers.ValidationError('You have already subscribed!')
         return data
 
-    def create(self, validated_data):
-        return Follow.objects.create(**validated_data)
-
     def get_recipes_count(self, data):
         return Recipe.objects.filter(author=data).count()
 
