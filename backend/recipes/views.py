@@ -1,6 +1,5 @@
-from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status, viewsets, exceptions
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (
     IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -35,7 +34,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             related_manager.get(recipe_id=recipe.id).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         if related_manager.filter(recipe=recipe).exists():
-            raise exceptions.ValidationError('Рецепт уже в избранном')
+            content = {'errors': 'Рецепт уже в избранном'}
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
         related_manager.create(recipe=recipe)
         serializer = RecipeSerializer(instance=recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

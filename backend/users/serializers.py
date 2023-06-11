@@ -6,7 +6,6 @@ from rest_framework import serializers, validators
 from recipes.models import Recipe
 from recipes.serializers import RecipeSerializer
 from users.mixins import IsSubscribedMixin
-
 from .models import CustomUser, Follow
 
 
