@@ -13,4 +13,4 @@ Foodgram - cервис, позволяющий авторизованным по
 
 1. Установить соединение с сервером
 
-`ssh username@server_address`
+> ssh username@server_address
