@@ -1,70 +1,46 @@
 from django.contrib import admin
 
-from recipes.models import (Ingredient, IngredientsRecipe, Recipe, Tag,
-                            TagsRecipe)
-from .models import CustomUser, Follow
+from .models import Follow, User
 
 
-class IngredientsInline(admin.TabularInline):
-    model = IngredientsRecipe
-    extra = 1
-
-
-class TagsInline(admin.TabularInline):
-    model = TagsRecipe
-    extra = 1
-
-
-class UsersAdmin(admin.ModelAdmin):
-    list_display = ('username', 'password', 'first_name', 'last_name', 'email')
-    list_filter = ('username', 'email')
-    search_fields = ('username', 'email')
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'role',
+    )
+    list_filter = ('email', 'username')
+    search_fields = ('username',)
     empty_value_display = "-пусто-"
 
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        is_superuser = request.user.is_superuser
+        disabled_fields = set()
 
-class FollowsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'author')
+        if not is_superuser:
+            disabled_fields |= {
+                'username',
+                'is_superuser',
+                'role',
+                'is_staff',
+                'user_permissions',
+            }
+
+        for f in disabled_fields:
+            if f in form.base_fields:
+                form.base_fields[f].disabled = True
+
+        return form
+
+
+@admin.register(Follow)
+class FollowAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'user', 'author')
     list_filter = ('user', 'author')
-    search_fields = ('user', 'author')
+    search_fields = ('author',)
     empty_value_display = "-пусто-"
-
-
-class RecipesAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author', 'count_recipes_favorite')
-    list_filter = ('name', 'author', 'tags')
-    search_fields = ('name', 'author', 'tags')
-    empty_value_display = "-пусто-"
-    inlines = [
-        TagsInline, IngredientsInline
-    ]
-    readonly_fields = ['count_recipes_favorite']
-
-    def count_recipes_favorite(self, obj):
-        return obj.favorite_recipes.count()
-
-    count_recipes_favorite.short_description = 'Популярность'
-
-
-class TagsAdmin(admin.ModelAdmin):
-    inlines = [
-        TagsInline
-    ]
-    list_display = ('name', 'color')
-    list_filter = ('name',)
-    search_fields = ('name',)
-
-
-class IngredientsAdmin(admin.ModelAdmin):
-    inlines = [
-        IngredientsInline
-    ]
-    list_display = ('name', 'measurement_unit')
-    list_filter = ('name',)
-    search_fields = ('name',)
-
-
-admin.site.register(CustomUser, UsersAdmin)
-admin.site.register(Follow, FollowsAdmin)
-admin.site.register(Recipe, RecipesAdmin)
-admin.site.register(Tag, TagsAdmin)
-admin.site.register(Ingredient, IngredientsAdmin)

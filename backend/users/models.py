@@ -1,54 +1,108 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import F, Q
 
 
-class CustomUser(AbstractUser):
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'password', 'first_name', 'last_name']
-    ROLE_USER = 'user'
-    ROLE_ADMIN = 'admin'
-    USERS_ROLE = (
-        (ROLE_USER, 'Пользователь'),
-        (ROLE_ADMIN, 'Админ'),
+class User(AbstractUser):
+    USER = 'user'
+    MODERATOR = 'moderator'
+    ADMIN = 'admin'
+    ROLES = {
+        (USER, 'user'),
+        (MODERATOR, 'moderator'),
+        (ADMIN, 'admin'),
+    }
+    email = models.EmailField(
+        verbose_name=('Адрес email'),
+        max_length=254,
+        unique=True,
+        blank=False,
+        error_messages={
+            'unique': ('Пользователь с таким email уже существует!'),
+        },
+        help_text=('Укажите свой email'),
+    )
+    username = models.CharField(
+        verbose_name=('Логин'),
+        max_length=150,
+        unique=True,
+        error_messages={
+            'unique': ('Пользователь с таким никнеймом уже существует!'),
+        },
+        help_text=('Укажите свой никнейм'),
+    )
+    first_name = models.CharField(
+        verbose_name=('Имя'),
+        max_length=150,
+        blank=True,
+        help_text=('Укажите своё имя'),
+    )
+    last_name = models.CharField(
+        verbose_name=('Фамилия'),
+        max_length=150,
+        blank=True,
+        help_text=('Укажите свою фамилию'),
     )
     role = models.CharField(
-        choices=USERS_ROLE,
-        max_length=10,
-        verbose_name='Роль пользователя',
-        default=ROLE_USER
+        verbose_name=('статус'),
+        max_length=20,
+        choices=ROLES,
+        default=USER,
     )
-    username = models.CharField('username', max_length=150, unique=True)
-    password = models.TextField('password', max_length=150)
-    email = models.EmailField('e-mail', max_length=254, unique=True)
-    first_name = models.TextField('first_name', max_length=150)
-    last_name = models.TextField('last_name', max_length=150)
+    date_joined = models.DateTimeField(
+        verbose_name=('Дата регистрации'),
+        auto_now_add=True,
+    )
+    password = models.CharField(
+        verbose_name=('Пароль'),
+        max_length=150,
+        help_text=('Введите пароль'),
+    )
+
+    class Meta:
+        swappable = 'AUTH_USER_MODEL'
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+
+    def __str__(self):
+        return self.get_full_name()
+
+    @property
+    def is_moderator(self):
+        return self.is_staff or self.role == self.MODERATOR
 
     @property
     def is_admin(self):
-        return self.role == self.ROLE_ADMIN
-
-    def __str__(self):
-        return self.username
+        return self.is_superuser or self.role == self.ADMIN
 
 
 class Follow(models.Model):
     user = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         related_name='follower',
         verbose_name='Подписчик',
-        help_text='Подписчик на автора рецепта'
     )
     author = models.ForeignKey(
-        CustomUser, null=True,
+        User,
         on_delete=models.CASCADE,
-        related_name='followed',
-        verbose_name='Автор',
-        help_text='Автор рецепта'
+        related_name='following',
+        verbose_name='Автор рецепта',
     )
 
     class Meta:
-        constraints = [models.UniqueConstraint(
-            fields=['author', 'user'],
-            name='unique_object'
-        )]
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('user', 'author'),
+                name='uniq_follow',
+            ),
+            models.CheckConstraint(
+                check=~Q(user=F('author')),
+                name='self_following',
+            ),
+        )
+
+    def __str__(self):
+        return f'{self.user} - {self.author}'
