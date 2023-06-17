@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from foodgram.pagination import LimitPageNumberPaginator
 from .filters import IngredientFilter, RecipeFilter
 from .models import (
     Ingredient, Recipe, Tag, FavoriteRecipe, ShoppingList,
@@ -29,6 +30,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     }
     default_serializer_class = AddRecipeSerializer
     permission_classes = (IsAuthorOrAdmin,)
+    pagination_class = LimitPageNumberPaginator
 
     def get_serializer_class(self):
         return self.serializer_classes.get(self.action,

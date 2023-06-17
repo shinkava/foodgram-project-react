@@ -4,9 +4,9 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+from foodgram.pagination import LimitPageNumberPaginator
 from .models import Follow, User
 from .serializers import FollowSerializer
 
@@ -48,7 +48,7 @@ def follow_author(request, pk):
 class SubscriptionListView(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = FollowSerializer
-    paginator = PageNumberPagination()
+    pagination_class = LimitPageNumberPaginator
     filter_backends = (filters.SearchFilter,)
     permission_classes = (permissions.IsAuthenticated,)
     search_fields = ('^following__user',)
