@@ -36,6 +36,8 @@ nano redoc.html
 sudo apt install docker.io
 sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
+```
+```
 Проверка корректности установки:
 sudo  docker-compose --version
 ```
@@ -75,3 +77,30 @@ sudo docker-compose exec web python manage.py createsuperuser
 ```
 sudo docker-compose exec web python manage.py load_ingredients
 ```
+
+## Дополнительные команды
+- Для остановки контейнеров с их удалением
+```
+sudo docker compose down -v 
+```
+- Для остановки контейнеров без удаления
+```
+sudo docker compose stop 
+```
+- Для удаления неиспользуемых образов
+```
+sudo image prune
+```
+- Для внесения изменений в образ бэкенда (локально)
+```
+docker build -t shinkava/foogram-backend:v5 .
+```
+- Для отправки образа
+```
+docker push shinkava/foogram-backend:v5
+```
+- Для обновления образа на сервере
+```
+sudo docker pull shinkava/foogram-backend:v5
+```
+
