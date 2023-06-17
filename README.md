@@ -11,7 +11,22 @@ Foodgram - cервис, позволяющий авторизованным по
 
 ## Инструкция по развертыванию проекта
 
-Установить соединение с сервером
+1. Установить соединение с сервером
 ```
 ssh username@server_address
+```
+2. Обновите индекс пакетов APT и обновите установленные в системе пакеты и установите обновления безопасности
+```
+sudo apt update
+sudo apt upgrade -y
+```
+3. В корневую папку скопируйте файлы nginx.conf и docker-compose.yml, а также содержимое папки Docs
+```
+nano nginx.conf 
+sudo docker-compose.yml
+
+mkdir docs
+cd docs
+nano openapi-schema.yml
+nano redoc.html
 ```
