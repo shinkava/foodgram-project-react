@@ -47,7 +47,7 @@ def follow_author(request, pk):
 
 class SubscriptionListView(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
-    serializer_class = FollowSerializer 
+    serializer_class = FollowSerializer
     paginator = PageNumberPagination()
     filter_backends = (filters.SearchFilter,)
     permission_classes = (permissions.IsAuthenticated,)
